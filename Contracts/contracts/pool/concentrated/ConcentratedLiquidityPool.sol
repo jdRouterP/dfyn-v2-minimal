@@ -63,6 +63,8 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
 
     uint256 internal unlocked;
 
+    uint256 public tickCount;
+
     mapping(int24 => Tick) public ticks;
     mapping(int24 => LimitOrderTickData) public limitOrderTicks;
     mapping(address => mapping(int24 => mapping(int24 => Position))) public positions;
@@ -94,6 +96,7 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
         _;
     }
 
+
     /// @dev Only set immutable variables here - state changes made here will not be used.
     constructor(bytes memory _deployData, IMasterDeployer _masterDeployer) {
         (address _token0, address _token1, uint24 _swapFee, uint24 _tickSpacing) = abi.decode(
@@ -121,6 +124,7 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
         unlocked = 1;
         lastObservation = uint32(block.timestamp);
         owner = msg.sender;
+        tickCount=2;
     }
 
     /// @dev Called only once from the factory.
@@ -180,7 +184,14 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
             if (priceLower <= currentPrice && currentPrice < priceUpper) liquidity += uint128(liquidityMinted);
         }
 
-        nearestTick = Ticks.insert(
+        //Stack-too deep issue solution
+           IConcentratedLiquidityPoolStruct.pooldata memory data;
+           data.nearestTick=nearestTick;
+           data.currentPrice=uint160(currentPrice);
+           data.tickCount=tickCount;
+
+
+        (nearestTick,tickCount) = Ticks.insert(
             ticks,
             feeGrowthGlobal0,
             feeGrowthGlobal1,
@@ -190,8 +201,10 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
             mintParams.upperOld,
             mintParams.upper,
             uint128(liquidityMinted),
-            nearestTick,
-            uint160(currentPrice)
+            data
+            // nearestTick,
+            // uint160(currentPrice),
+            // tickCount
         );
 
         (uint128 amount0Actual, uint128 amount1Actual) = DyDxMath.getAmountsForLiquidity(
@@ -282,7 +295,7 @@ contract ConcentratedLiquidityPool is IConcentratedLiquidityPoolStruct {
 
         _transferBothTokens(msg.sender, amount0, amount1);
 
-        nearestTick = Ticks.remove(ticks, lower, upper, amount, nearestTick);
+        (nearestTick,tickCount) = Ticks.remove(ticks, lower, upper, amount, nearestTick,tickCount);
 
         emit Burn(msg.sender, amount0, amount1);
     }

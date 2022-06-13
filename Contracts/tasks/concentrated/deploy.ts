@@ -4,7 +4,8 @@ import { BigNumber } from "@ethersproject/bignumber";
 import {
   getSqrtX96FromPrice,
   nearestValidTick
-} from "../utils/Math";
+} from "../utils/math";
+
 import { ethers } from "hardhat";
 
 
@@ -92,6 +93,12 @@ task("deployclp").setAction(async function (taskArguments: TaskArguments, hre) {
   console.log("tickMath deployed at ", tickMath.address);
 
   await vault.whitelistMasterContract(manager.address,true);
+
+  const ConcentratedLiquidityPoolHelperContract = await hre.ethers.getContractFactory("ConcentratedLiquidityPoolHelper");
+  const concentratedLiquidityPoolHelper = await  ConcentratedLiquidityPoolHelperContract.deploy();
+  await concentratedLiquidityPoolHelper.deployed();
+
+  console.log("concentratedLiquidityPoolHelper deployed at ", concentratedLiquidityPoolHelper.address);
 
 });
 
@@ -222,5 +229,15 @@ task("approvetoken").setAction(async function (taskArguments: TaskArguments, hre
     "0x0000000000000000000000000000000000000000000000000000000000000000"
   )
 
+})
+
+
+task("Swap").setAction(async function (taskArguments: TaskArguments, hre) {
+  const ConcentratedLiquidityPoolHelper='0xCcE59A5668Ebcd3756d73127679FdC05FDDC68F1';
+  const poolAddress='0xE01cAA02276d73186Ba417E9149924996eA71133'
+  const ConcentratedLiquidityPoolHelperContract = await hre.ethers.getContractFactory("ConcentratedLiquidityPoolHelper");
+  const concentratedLiquidityPoolHelperInst = await  ConcentratedLiquidityPoolHelperContract.attach(ConcentratedLiquidityPoolHelper);
+  const tickData=await concentratedLiquidityPoolHelperInst.getTickState(poolAddress,4);
+  console.log(tickData);
 })
 

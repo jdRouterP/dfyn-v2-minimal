@@ -17,6 +17,11 @@ interface IConcentratedLiquidityPoolStruct {
         uint256 feeGrowthOutside1;
         uint160 secondsGrowthOutside;
     }
+    struct pooldata{
+        int24 nearestTick;
+        uint160 currentPrice;
+        uint256 tickCount;
+    }
     struct LimitOrderTickData {
         uint256 token0Liquidity;
         uint256 token1Liquidity;

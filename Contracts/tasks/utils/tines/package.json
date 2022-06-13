@@ -1,0 +1,38 @@
+{
+  "name": "@sushiswap/tines",
+  "version": "1.0.0-canary.94",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "module": "dist/tines.esm.js",
+  "repository": {
+    "url": "sushiswap/sdk",
+    "directory": "packages/tines"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "lint": "tsdx lint src test",
+    "build": "tsdx build",
+    "watch": "tsdx watch",
+    "test": "tsdx test",
+    "test_debug": "node --inspect-brk '../../node_modules/tsdx/dist/index.js' test",
+    "clear_jest_cache": "tsdx test --clearCache --passWithNoTests",
+    "prepublishOnly": "npx tsdx build"
+  },
+  "dependencies": {
+    "@ethersproject/bignumber": "^5.4.0",
+    "@sushiswap/core-sdk": "1.0.0-canary.114"
+  },
+  "devDependencies": {
+    "@types/seedrandom": "^3.0.1",
+    "seedrandom": "^3.0.5",
+    "tsdx": "^0.14.1"
+  },
+  "gitHead": "59f0225d9e6a99fe16cc6f8cec747b77e667b41d"
+}

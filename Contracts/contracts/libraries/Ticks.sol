@@ -7,6 +7,9 @@ import "../interfaces/IConcentratedLiquidityPool.sol";
 
 /// @notice Tick management library for ranged liquidity.
 library Ticks {
+
+   
+
     function getMaxLiquidity(uint24 _tickSpacing) public pure returns (uint128) {
         return type(uint128).max / uint128(uint24(TickMath.MAX_TICK) / (2 * uint24(_tickSpacing)));
     }
@@ -62,9 +65,9 @@ library Ticks {
         int24 upperOld,
         int24 upper,
         uint128 amount,
-        int24 nearestTick,
-        uint160 currentPrice
-    ) public returns (int24) {
+       IConcentratedLiquidityPoolStruct.pooldata memory data
+      
+    ) public returns (int24,uint256) {
         require(lower < upper, "WRONG_ORDER");
         require(TickMath.MIN_TICK <= lower, "LOWER_RANGE");
         require(upper <= TickMath.MAX_TICK, "UPPER_RANGE");
@@ -82,7 +85,7 @@ library Ticks {
 
                 require((old.liquidity != 0 || lowerOld == TickMath.MIN_TICK) && lowerOld < lower && lower < oldNextTick, "LOWER_ORDER");
 
-                if (lower <= nearestTick) {
+                if (lower <= data.nearestTick) {
                     ticks[lower] = IConcentratedLiquidityPoolStruct.Tick(
                         lowerOld,
                         oldNextTick,
@@ -97,6 +100,7 @@ library Ticks {
 
                 old.nextTick = lower;
                 ticks[oldNextTick].previousTick = lower;
+                data.tickCount++;
             }
         }
 
@@ -111,7 +115,7 @@ library Ticks {
 
             require(old.liquidity != 0 && oldNextTick > upper && upperOld < upper, "UPPER_ORDER");
 
-            if (upper <= nearestTick) {
+            if (upper <= data.nearestTick) {
                 ticks[upper] = IConcentratedLiquidityPoolStruct.Tick(
                     upperOld,
                     oldNextTick,
@@ -125,17 +129,18 @@ library Ticks {
             }
             old.nextTick = upper;
             ticks[oldNextTick].previousTick = upper;
+            data.tickCount++;
         }
 
-        int24 tickAtPrice = TickMath.getTickAtSqrtRatio(currentPrice);
+        int24 tickAtPrice = TickMath.getTickAtSqrtRatio(data.currentPrice);
 
-        if (nearestTick < upper && upper <= tickAtPrice) {
-            nearestTick = upper;
-        } else if (nearestTick < lower && lower <= tickAtPrice) {
-            nearestTick = lower;
+        if (data.nearestTick < upper && upper <= tickAtPrice) {
+            data.nearestTick = upper;
+        } else if (data.nearestTick < lower && lower <= tickAtPrice) {
+            data.nearestTick = lower;
         }
 
-        return nearestTick;
+        return (data.nearestTick,data.tickCount);
     }
 
     function remove(
@@ -143,8 +148,9 @@ library Ticks {
         int24 lower,
         int24 upper,
         uint128 amount,
-        int24 nearestTick
-    ) public returns (int24) {
+        int24 nearestTick,
+        uint256 tickCount
+    ) public returns (int24,uint256) {
         IConcentratedLiquidityPoolStruct.Tick storage current = ticks[lower];
 
         if (lower != TickMath.MIN_TICK && current.liquidity == amount) {
@@ -158,6 +164,7 @@ library Ticks {
             if (nearestTick == lower) nearestTick = current.previousTick;
 
             delete ticks[lower];
+            tickCount--;
         } else {
             unchecked {
                 current.liquidity -= amount;
@@ -177,13 +184,14 @@ library Ticks {
             if (nearestTick == upper) nearestTick = current.previousTick;
 
             delete ticks[upper];
+            tickCount--;
         } else {
             unchecked {
                 current.liquidity -= amount;
             }
         }
 
-        return nearestTick;
+        return (nearestTick,tickCount);
     }
 
     function excecuteLimitOrder(
