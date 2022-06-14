@@ -10,3 +10,6 @@
 // import "./whitelist-factory";
 // import "./whitelist-router";
 import "./concentrated/deploy";
+import "./concentrated/deploypool";
+import "./concentrated/mint";
+import "./concentrated/swap";
