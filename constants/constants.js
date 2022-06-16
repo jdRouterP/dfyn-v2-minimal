@@ -1,3 +1,5 @@
 export const MasterDeployer='0x9225A12f9397B7FeB8b917e576Aa8d3C6cF488f9'
 export const Vault='0x997bAaDAa2963f0218A8Dd0E97f26D8a62aBbf1b'
 export const factory='0xb715Ad91fd0d19ae47fd8da0519C098A412173D5'
+export const Manager='0x633600f0c77130d20F069705334E2108e5Ad21d0'
+export const TickMath='0x07BFfb7f8C97370601fDcC661E2F864c2F6BE7CA'
