@@ -117,7 +117,7 @@ export default function Createpool() {
                 value={price} />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputPassword1" className="form-label">Price</label>
+                <label htmlFor="exampleInputPassword1" className="form-label">Fee</label>
                 <input  className="form-control"
                 onChange={handleChange("fee")}
                 type="text"
