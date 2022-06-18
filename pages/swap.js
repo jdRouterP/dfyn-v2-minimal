@@ -63,7 +63,7 @@ export default function Swap() {
         "Please install metamask"
       )}
       <div className="container">
-      <h1>Swap page In</h1>
+      <h1>Swap In</h1>
         <div className="card">
           <div className="card-body">
             <form>
@@ -84,7 +84,7 @@ export default function Swap() {
             </form>
           </div>
         </div>
-        <h1>Swap page out</h1>
+        <h1>Swap out</h1>
         <div className="card">
           <div className="card-body">
             <form>

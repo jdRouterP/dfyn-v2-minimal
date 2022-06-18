@@ -297,12 +297,20 @@ export default function Addliquidity() {
                 value={token1Amount} />
               </div>
               {active ? <button type="button" className="btn btn-success btn-space" onClick={()=>approveTokens()}>Approve</button> : ""}
-              {active ? <button type="button" className="btn btn-primary " onClick={()=>addliquidity()}>AddLiquidity</button> : ""}
-              {active ? <button type="button" className="btn btn-primary " onClick={()=>getvalidPrice()}>Rebalance</button> : ""}
-              {active ? <button type="button" className="btn btn-primary " onClick={()=>findOldTicks()}>findoldtick</button> : ""}
+              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>addliquidity()}>Add Liquidity</button> : ""}
+              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>getvalidPrice()}>Find Valid price</button> : ""}
+              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>findOldTicks()}>Find Old Ticks</button> : ""}
             </form>
           </div>
         </div>
+      <h1>WorkFlow</h1>
+
+      <h3>1.Click Connect</h3>
+      <h3>2.Enter values</h3>
+      <h3>3.Click Find valid Price</h3>
+      <h3>4.Click Find Old Tick</h3>
+      <h3>5.Click Approve</h3>
+      <h3>6.Click AddLiquidity</h3>
       </div>
     </div>
   );
