@@ -121,10 +121,11 @@ export default function Addliquidity() {
         const tridentMathInst= new ethers.Contract(TridentMath,tridentMathUIAbi, signer)
 
         const twoX192=BigNumber.from(2).pow(96);
-        const tenX6=BigNumber.from(10).pow(6);
         //Fetching current Pool Price
         const poolCurrentprice=(await poolInst.getPriceAndNearestTicks())._price
-        const currentprice=await tridentMathInst.priceFromSqrtprice(twoX192,poolCurrentprice.toString());
+        console.log("hello")
+        console.log("pool Price,",poolCurrentprice.toString())
+        const currentprice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),poolCurrentprice.toString());
         console.log('current pool price',currentprice.toString())
 
         //Lower Price calculation
@@ -163,7 +164,7 @@ export default function Addliquidity() {
       let UpperSqrtX96Valid=await tickMathInst.getSqrtRatioAtTick(UpperValidTick.toString());
       console.log('Upper price from tick',UpperSqrtX96Valid.toString())
 
-      const finalUpperPrice=await tridentMathInst.priceFromSqrtprice(twoX192,UpperSqrtX96Valid.toString());
+      const finalUpperPrice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),UpperSqrtX96Valid.toString());
       const actualUpperPriceInDecimals=finalUpperPrice/(10**6);
       console.log('Upper price actual ',actualUpperPriceInDecimals.toString())
 

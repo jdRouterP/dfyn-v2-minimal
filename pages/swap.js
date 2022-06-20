@@ -16,6 +16,11 @@ export default function Swap() {
   const [hasMetamask, setHasMetamask] = useState(false);
   const [inAmount, setInAmount] = useState(false);
   const [pool,setPool]=useState('0xb1a768834E20E76fa592F8126f1F831bDBc7fC29')
+  const [zeroForOne,setZeroForOne]=useState(true)
+  const [unwrapVault,setUnWrapVault]=useState(true)
+  const [tokenAddress,setTokenAddress]=useState('')
+  const [amountOutMinimum,setAmountOutMinimum]=useState('0')
+
 
 
   useEffect(() => {
@@ -97,7 +102,8 @@ export default function Swap() {
         _token0,
         _token1}=await poolInst.getImmutables()
       try {
-        await vaultInst.deposit(_token0,accountAddress,pool,getBigNumber(token0Amount))
+        await vaultInst.deposit(_token0,accountAddress,pool,getBigNumber(token0Amount));
+        setTokenAddress(_token0)
       } catch (error) {
         console.log(error);
       }
@@ -112,27 +118,18 @@ export default function Swap() {
       const signer = provider.getSigner();
       const routerInst = new ethers.Contract(Router,routerAbi, signer);
       const deployData = await ethers.utils.defaultAbiCoder.encode(
-        ["address", "address", "uint24", "uint160", "uint24"],
-        [tokenB, tokenA, fee, price, tickSpacing]
+        ["bool", "address", "bool"],
+        [zeroForOne, receipient,unwrapVault]
       );
-      
       let swapParams={
         pool:pool,
-        tokenIn:getBigNumber(token0Amount),
-        data:""
-
+        tokenIn:tokenAddress,
+        amountIn:getBigNumber(token0Amount),
+        data:deployData,
+        amountOutMinimum:amountOutMinimum
       }
       try {
-        
-
-
-
-
-
-
-
-
-
+        await routerInst.exactInputSingle(swapParams);
       } catch (error) {
         console.log(error);
       }
@@ -159,18 +156,25 @@ export default function Swap() {
             <form>
               <div className="mb-3">
                 <label htmlFor="exampleInputEmail1" className="form-label">Pool</label>
-                <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
+                <input  className="form-control"
+                onChange={event=>setPool(event.target.value)}
+                type="text"
+                value={pool} />
               </div>
               <div className="mb-3">
                 <label htmlFor="exampleInputEmail1" className="form-label">InAmount</label>
-                <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
+                <input  className="form-control"
+                onChange={event=>setInAmount(event.target.value)}
+                type="text"
+                value={inAmount} />
               </div>
               <div className="mb-3">
                 <label htmlFor="exampleInputPassword1" className="form-label">OutAmount</label>
                 <input type="password" className="form-control" id="exampleInputPassword1" />
               </div>
-              {active ? <button type="submit" className="btn btn-success btn-space">Approve</button> : ""}
-              {active ? <button type="submit" className="btn btn-primary ">Swap</button> : ""}
+              {active ? <button type="submit" className="btn btn-success btn-space" onClick={()=>approveTokens()}>Approve</button> : ""}
+              {active ? <button type="submit" className="btn btn-success btn-space" onClick={()=>depositToVault()}>Deposit To Vault</button> : ""}
+              {active ? <button type="submit" className="btn btn-primary " onClick={()=>SwapIn()}>Swap</button> : ""}
             </form>
           </div>
         </div>
