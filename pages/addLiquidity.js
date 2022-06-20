@@ -121,6 +121,7 @@ export default function Addliquidity() {
         const tridentMathInst= new ethers.Contract(TridentMath,tridentMathUIAbi, signer)
 
         const twoX192=BigNumber.from(2).pow(96);
+        const tenX6=BigNumber.from(10).pow(6);
         //Fetching current Pool Price
         const poolCurrentprice=(await poolInst.getPriceAndNearestTicks())._price
         const currentprice=await tridentMathInst.priceFromSqrtprice(twoX192,poolCurrentprice.toString());
@@ -142,8 +143,9 @@ export default function Addliquidity() {
       console.log('lower price from tick',lowerValidSqrtPrice.toString())
 
 
-      const actuallowerPrice=await tridentMathInst.priceFromSqrtprice(twoX192,lowerValidSqrtPrice.toString());
-      console.log('lower price actual ',actuallowerPrice.toString())
+      const finallowerPrice=await tridentMathInst.priceFromSqrtprice(twoX192,lowerValidSqrtPrice.toString());
+      const actualLowerPriceInDecimals=finallowerPrice/(10**6);
+      console.log('lower price actual ',actualLowerPriceInDecimals.toString())
 
 
 
@@ -162,16 +164,16 @@ export default function Addliquidity() {
       console.log('Upper price from tick',UpperSqrtX96Valid.toString())
 
       const finalUpperPrice=await tridentMathInst.priceFromSqrtprice(twoX192,UpperSqrtX96Valid.toString());
-
-      console.log('Upper price actual ',finalUpperPrice.toString())
+      const actualUpperPriceInDecimals=finalUpperPrice/(10**6);
+      console.log('Upper price actual ',actualUpperPriceInDecimals.toString())
 
       //finding upper and lower old ticks
       
       //Updating states
       setLowerTick(lowerValidTick)
       setUpperTick(UpperValidTick)
-      setLowerPrice(actuallowerPrice)
-      setUpperPrice(finalUpperPrice)
+      setLowerPrice(actualLowerPriceInDecimals)
+      setUpperPrice(actualUpperPriceInDecimals)
   
     } else {
       console.log("Please install MetaMask");

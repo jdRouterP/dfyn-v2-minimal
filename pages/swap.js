@@ -6,13 +6,17 @@ import { InjectedConnector } from "@web3-react/injected-connector";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {routerAbi} from "../constants/router"
-import {Router} from "../constants/constants"
+import { vaultAbi } from "../constants/vault";
+import {erc20TokenAbi} from "../constants/abis/contracts/mocks/ERC20Mock.sol/ERC20Mock"
+import {Router,Vault} from "../constants/constants"
 
 export const injected = new InjectedConnector();
 
 export default function Swap() {
   const [hasMetamask, setHasMetamask] = useState(false);
   const [inAmount, setInAmount] = useState(false);
+  const [pool,setPool]=useState('0xb1a768834E20E76fa592F8126f1F831bDBc7fC29')
+
 
   useEffect(() => {
     if (typeof window.ethereum !== "undefined") {
@@ -39,10 +43,85 @@ export default function Swap() {
     }
   }
 
+  async function approveTokens() {
+    if (active) {
+      const signer = provider.getSigner();
+      const accountAddress=await signer.getAddress()
+      console.log('signer',accountAddress)
+      const poolInst = new ethers.Contract(pool,poolAbi, signer);
+      const{ _MAX_TICK_LIQUIDITY,
+        _tickSpacing,
+        _swapFee,
+        _barFeeTo,
+        _vault,
+        _masterDeployer,
+        _token0,
+        _token1}=await poolInst.getImmutables()
+        console.log('hello')
+        const tokenAInst= new ethers.Contract(_token0,erc20TokenAbi, signer)
+        const tokenBInst= new ethers.Contract(_token1,erc20TokenAbi, signer)
+        const vaultInst=new ethers.Contract(Vault,vaultAbi,signer);
+      try {
+        await tokenAInst.approve(Vault,getBigNumber(token0Amount));
+        await tokenBInst.approve(Vault,getBigNumber(token1Amount));
+        await vaultInst.setMasterContractApproval(
+          accountAddress,
+          Manager,
+          true,
+          "0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        await vaultInst.deposit(_token0,accountAddress,pool,getBigNumber(token0Amount))
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("Please install MetaMask");
+    }
+  }
+
+
+
+  async function depositToVault() {
+    if (active) {
+      const signer = provider.getSigner();
+      const vaultInst = new ethers.Contract(Vault,vaultAbi,signer);
+      const poolInst = new ethers.Contract(pool,poolAbi, signer);
+      const{ _MAX_TICK_LIQUIDITY,
+        _tickSpacing,
+        _swapFee,
+        _barFeeTo,
+        _vault,
+        _masterDeployer,
+        _token0,
+        _token1}=await poolInst.getImmutables()
+      try {
+        await vaultInst.deposit(_token0,accountAddress,pool,getBigNumber(token0Amount))
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("Please install MetaMask");
+    }
+  }
+
+
   async function SwapIn() {
     if (active) {
       const signer = provider.getSigner();
       const routerInst = new ethers.Contract(Router,routerAbi, signer);
+      const deployData = await ethers.utils.defaultAbiCoder.encode(
+        ["address", "address", "uint24", "uint160", "uint24"],
+        [tokenB, tokenA, fee, price, tickSpacing]
+      );
+      
+      let swapParams={
+        pool:pool,
+        tokenIn:getBigNumber(token0Amount),
+        data:""
+
+      }
       try {
         
 
