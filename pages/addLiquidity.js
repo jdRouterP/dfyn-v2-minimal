@@ -210,8 +210,8 @@ export default function Addliquidity() {
     if (active) {
       const signer = provider.getSigner();
       const poolManagerInst = new ethers.Contract(Manager,poolManagerAbi, signer);
-      let tokenXamount=getBigNumber(token0Amount)
-      let tokenYamount=getBigNumber(token1Amount)
+      const tokenXamount=getBigNumber(token0Amount.toString())
+      const tokenYamount=getBigNumber(token1Amount.toString())
       console.log('pool',pool)
       console.log('loweroldTick',lowerOldTick)
       console.log('LowerTick',lowerTick)
@@ -227,8 +227,8 @@ export default function Addliquidity() {
           lowerTick,
           upperOldTick,
           upperTick,
-          tokenXamount.toString(),
-          tokenYamount.toString(),
+          tokenXamount,
+          tokenYamount,
           true,
           "0",
           tokenId,

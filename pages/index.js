@@ -19,7 +19,7 @@ export default function Createpool() {
     tokenA: "0x999D86E29A04B4354d5149aBdB32c6A766894438",
     tokenB: "0x528BC890512D07f95D42D8249bAF55E3Bc3B3B8f",
     error: "",
-    price: TWO_POW_96.toString(),
+    price: "1",
     fee: "5",
     tickSpacing: "60",
     tokenAAmount: "",
@@ -77,9 +77,10 @@ export default function Createpool() {
         masterDeployerAbi,
         signer
       );
+      let sqrtprice=TWO_POW_96.mul(price)
       const deployData = await ethers.utils.defaultAbiCoder.encode(
         ["address", "address", "uint24", "uint160", "uint24"],
-        [tokenB, tokenA, fee, price, tickSpacing]
+        [tokenB, tokenA, fee,sqrtprice, tickSpacing]
       );
       try {
         await masterDeployer.deployPool(factory, deployData);
