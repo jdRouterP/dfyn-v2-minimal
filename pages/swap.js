@@ -1,8 +1,9 @@
 import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { routerAbi } from "../constants/router";
+import { tickMathAbi } from "../constants/tickmath";
 import { vaultAbi } from "../constants/vault";
 import { erc20TokenAbi } from "../constants/abis/contracts/mocks/ERC20Mock.sol/ERC20Mock";
 import { Router, Vault } from "../constants/constants";
@@ -62,19 +63,14 @@ export default function Swap() {
       const accountAddress = await signer.getAddress();
       console.log("signer", accountAddress);
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+        _token0
+        = await poolInst.token0();
+
       const tokenAInst = new ethers.Contract(_token0, erc20TokenAbi, signer);
       const vaultInst = new ethers.Contract(Vault, vaultAbi, signer);
       try {
+        await tokenAInst.approve(pool, getBigNumber(inAmount));
         await tokenAInst.approve(Vault, getBigNumber(inAmount));
         await vaultInst.setMasterContractApproval(
           accountAddress,
@@ -92,25 +88,29 @@ export default function Swap() {
     }
   }
 
+   async function getTickAtCurrentPrice(pool) {
+    return getTickAtPrice((await pool.getPriceAndNearestTicks())._price);
+  }
+  
+   function getTickAtPrice(price) {
+     // tickMath Contract
+    return Dfyn.Instance.tickMath.getTickAtSqrtRatio(price);
+  }
+
   async function approveToken1() {
     if (active) {
       const signer = provider.getSigner();
       const accountAddress = await signer.getAddress();
       console.log("signer", accountAddress);
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+      _token1
+      = await poolInst.token1();
+
       const tokenBInst = new ethers.Contract(_token1, erc20TokenAbi, signer);
       const vaultInst = new ethers.Contract(Vault, vaultAbi, signer);
       try {
+        await tokenBInst.approve(pool, getBigNumber(inAmount));
         await tokenBInst.approve(Vault, getBigNumber(inAmount));
         await vaultInst.setMasterContractApproval(
           accountAddress,
@@ -134,16 +134,9 @@ export default function Swap() {
       const accountAddress = await signer.getAddress();
       const vaultInst = new ethers.Contract(Vault, vaultAbi, signer);
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+      _token0
+      = await poolInst.token0();
       console.log("account Address", accountAddress);
       console.log("inAmount", getBigNumber(inAmount));
       try {
@@ -170,16 +163,9 @@ export default function Swap() {
       const accountAddress = await signer.getAddress();
       const vaultInst = new ethers.Contract(Vault, vaultAbi, signer);
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+        _token1
+        = await poolInst.token1();
       let token;
       console.log("account Address", accountAddress);
       console.log("inAmount", getBigNumber(inAmount));
@@ -206,16 +192,9 @@ export default function Swap() {
       const routerInst = new ethers.Contract(Router, routerAbi, signer);
       const accountAddress = await signer.getAddress();
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+        _token0
+        = await poolInst.token0();
       let token;
       let zeroForOne=true;
       const deployData = await ethers.utils.defaultAbiCoder.encode(
@@ -246,16 +225,9 @@ export default function Swap() {
       const routerInst = new ethers.Contract(Router, routerAbi, signer);
       const accountAddress = await signer.getAddress();
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const {
-        _MAX_TICK_LIQUIDITY,
-        _tickSpacing,
-        _swapFee,
-        _barFeeTo,
-        _vault,
-        _masterDeployer,
-        _token0,
-        _token1,
-      } = await poolInst.getImmutables();
+      const 
+        _token1
+        = await poolInst.token1();
       const zeroForOne=false;
       const deployData = await ethers.utils.defaultAbiCoder.encode(
         ["bool", "address", "bool"],
@@ -283,8 +255,9 @@ export default function Swap() {
   return (
     <div>
       {hasMetamask ? (
-        active ? (
-          "Connected!"
+         active ? (
+          chainId===80001?
+          "Connected! ":<button className="btn btn-danger float-end" >Switch To Mumbai</button>
         ) : (
           <button
             className="btn btn-danger float-end"

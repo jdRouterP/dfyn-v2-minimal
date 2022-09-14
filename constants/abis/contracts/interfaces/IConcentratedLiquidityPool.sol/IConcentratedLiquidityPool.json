@@ -130,6 +130,16 @@
           "type": "int24"
         },
         {
+          "internalType": "int24",
+          "name": "lowerOld",
+          "type": "int24"
+        },
+        {
+          "internalType": "int24",
+          "name": "upperOld",
+          "type": "int24"
+        },
+        {
           "internalType": "uint256",
           "name": "amountIn",
           "type": "uint256"
@@ -304,6 +314,47 @@
           "internalType": "uint128",
           "name": "_token1ProtocolFee",
           "type": "uint128"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "int24",
+          "name": "_tick",
+          "type": "int24"
+        }
+      ],
+      "name": "limitOrderTicks",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "token0Liquidity",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "token1Liquidity",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "token0Claimable",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "token1Claimable",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IConcentratedLiquidityPoolStruct.LimitOrderTickData",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -502,6 +553,19 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint24",
+          "name": "_barFee",
+          "type": "uint24"
+        }
+      ],
+      "name": "updateLimitOrderFee",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

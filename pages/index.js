@@ -16,8 +16,8 @@ export const injected = new InjectedConnector();
 export default function Createpool() {
   const TWO_POW_96 = BigNumber.from(2).pow(96);
   const [values, setValues] = useState({
-    tokenA: "0x999D86E29A04B4354d5149aBdB32c6A766894438",
-    tokenB: "0x528BC890512D07f95D42D8249bAF55E3Bc3B3B8f",
+    tokenA: "0xC401d918C3Eba31955c901106Af2b7399d570E4B",
+    tokenB: "0xce67252714d535B520D58497a62Ce892191559c6",
     error: "",
     price: "1",
     fee: "5",
@@ -91,12 +91,32 @@ export default function Createpool() {
       console.log("Please install MetaMask");
     }
   }
+  async function getPool() {
+    if (active) {
+      const signer = provider.getSigner();
+      const factoryContract = new ethers.Contract(
+        factory,
+        factoryAbi,
+        signer
+      );
+      try {
+      const pools=  await factoryContract.pools(tokenA,tokenB, 0);
+      console.log(pools)
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("Please install MetaMask");
+    }
+  }
+
 
   return (
     <>
       {hasMetamask ? (
-        active ? (
-          "Connected! "
+         active ? (
+          chainId===80001?
+          "Connected! ":<button className="btn btn-danger float-end" >Switch To Mumbai</button>
         ) : (
           <button
             className="btn btn-danger float-end"
@@ -168,6 +188,7 @@ export default function Createpool() {
                   value={tickSpacing}
                 />
               </div>
+              
               {active ? (
                 <button
                   type="button"
@@ -180,6 +201,10 @@ export default function Createpool() {
                 ""
               )}
             </form>
+            <div>
+              <button onClick={(
+              )=>getPool()}>Get Pools</button>
+            </div>
           </div>
          
         </div>
@@ -189,5 +214,5 @@ export default function Createpool() {
           <h3>3.Click Create</h3>
       </div>
     </>
-  );
+  );  
 }
