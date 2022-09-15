@@ -16,8 +16,8 @@ export const injected = new InjectedConnector();
 export default function Createpool() {
   const TWO_POW_96 = BigNumber.from(2).pow(96);
   const [values, setValues] = useState({
-    tokenA: "0xC401d918C3Eba31955c901106Af2b7399d570E4B",
-    tokenB: "0xce67252714d535B520D58497a62Ce892191559c6",
+    tokenA: "0xc7B8Da9185bBE76907711F34E1D9d12e978da93d",
+    tokenB: "0xb56b6549E17D681BC46203972f49A4f72d1bF22B",
     error: "",
     price: "1",
     fee: "5",
@@ -77,10 +77,10 @@ export default function Createpool() {
         masterDeployerAbi,
         signer
       );
-      let sqrtprice=TWO_POW_96.mul(price)
+      let sqrtprice = TWO_POW_96.mul(price);
       const deployData = await ethers.utils.defaultAbiCoder.encode(
         ["address", "address", "uint24", "uint160", "uint24"],
-        [tokenB, tokenA, fee,sqrtprice, tickSpacing]
+        [tokenB, tokenA, fee, sqrtprice, tickSpacing]
       );
       try {
         await masterDeployer.deployPool(factory, deployData);
@@ -94,14 +94,10 @@ export default function Createpool() {
   async function getPool() {
     if (active) {
       const signer = provider.getSigner();
-      const factoryContract = new ethers.Contract(
-        factory,
-        factoryAbi,
-        signer
-      );
+      const factoryContract = new ethers.Contract(factory, factoryAbi, signer);
       try {
-      const pools=  await factoryContract.pools(tokenA,tokenB, 0);
-      console.log(pools)
+        const pools = await factoryContract.pools(tokenA, tokenB, 0);
+        console.log(pools);
       } catch (error) {
         console.log(error);
       }
@@ -110,13 +106,17 @@ export default function Createpool() {
     }
   }
 
-
   return (
     <>
       {hasMetamask ? (
-         active ? (
-          chainId===80001?
-          "Connected! ":<button className="btn btn-danger float-end" >Switch To Mumbai</button>
+        active ? (
+          chainId === 80001 ? (
+            "Connected! "
+          ) : (
+            <button className="btn btn-danger float-end">
+              Switch To Mumbai
+            </button>
+          )
         ) : (
           <button
             className="btn btn-danger float-end"
@@ -188,7 +188,7 @@ export default function Createpool() {
                   value={tickSpacing}
                 />
               </div>
-              
+
               {active ? (
                 <button
                   type="button"
@@ -202,17 +202,15 @@ export default function Createpool() {
               )}
             </form>
             <div>
-              <button onClick={(
-              )=>getPool()}>Get Pools</button>
+              <button onClick={() => getPool()}>Get Pools</button>
             </div>
           </div>
-         
         </div>
         <h1>Work Flow</h1>
-          <h3>1.Click Connect</h3>
-          <h3>2.Enter values</h3>
-          <h3>3.Click Create</h3>
+        <h3>1.Click Connect</h3>
+        <h3>2.Enter values</h3>
+        <h3>3.Click Create</h3>
       </div>
     </>
-  );  
+  );
 }

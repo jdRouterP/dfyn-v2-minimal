@@ -5,12 +5,21 @@ import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import {erc20TokenAbi} from "../constants/abis/contracts/mocks/ERC20Mock.sol/ERC20Mock"
-import {MasterDeployer,factory,Vault,Manager,TickMath,TridentMath,PoolHelper} from "../constants/constants"
-import {poolAbi} from "../constants/pool"
+import { erc20TokenAbi } from "../constants/abis/contracts/mocks/ERC20Mock.sol/ERC20Mock";
+import {
+  MasterDeployer,
+  factory,
+  Vault,
+  Manager,
+  TickMath,
+  TridentMath,
+  PoolHelper,
+} from "../constants/constants";
+import { poolAbi } from "../constants/pool";
 import { vaultAbi } from "../constants/vault";
 import { poolHelperAbi } from "../constants/poolHelper";
-import {getSqrtX96FromPrice,
+import {
+  getSqrtX96FromPrice,
   getSqrtX96FromPrice1,
   nearestValidTick,
   findLowerValidTick,
@@ -18,58 +27,61 @@ import {getSqrtX96FromPrice,
   getpriceFromSqrtX96,
   getpriceFromSqrtX961,
   getBigNumber,
-  oldTickFinder} from "../utils/tick"
+  oldTickFinder,
+} from "../utils/tick";
 import { tickMathAbi } from "../constants/tickmath";
-import  { poolManagerAbi } from "../constants/poolManager";
+import { poolManagerAbi } from "../constants/poolManager";
 import { tridentMathUIAbi } from "../constants/tridentMath";
 import { BigNumber, BigNumberish } from "ethers";
 import { factoryAbi } from "../constants/factory";
-
-
-
 
 export const injected = new InjectedConnector();
 
 export default function Addliquidity() {
   //States
   const [hasMetamask, setHasMetamask] = useState(false);
-  const [lowerPrice,setLowerPrice]=useState('');
-  const [upperPrice,setUpperPrice]=useState('');
+  const [lowerPrice, setLowerPrice] = useState("");
+  const [upperPrice, setUpperPrice] = useState("");
 
-  const [token0,setToken0]=useState('')
-  const [token1,setToken1]=useState('')
-  const [pool,setPool]=useState('')
-  const [tokenId,setTokenId]=useState('0');
-  const [token0Amount,setToken0Amount]=useState('')
-  const [token1Amount,setToken1Amount]=useState('');
-  const [lowerTick,setLowerTick]=useState('');
-  const [upperTick,setUpperTick]=useState('');
-  const [upperOldTick,setUpperOldTick]=useState('');
-  const [lowerOldTick,setLowerOldTick]=useState('');
- 
+  const [token0, setToken0] = useState(
+    "0xb56b6549E17D681BC46203972f49A4f72d1bF22B"
+  );
+  const [token1, setToken1] = useState(
+    "0xc7B8Da9185bBE76907711F34E1D9d12e978da93d"
+  );
+  const [pool, setPool] = useState("");
+  const [currentprice, setCurrentPrice] = useState("");
+  const [tokenId, setTokenId] = useState("0");
+  const [token0Amount, setToken0Amount] = useState("");
+  const [token1Amount, setToken1Amount] = useState("");
+  const [lowerTick, setLowerTick] = useState("");
+  const [upperTick, setUpperTick] = useState("");
+  const [upperOldTick, setUpperOldTick] = useState("");
+  const [lowerOldTick, setLowerOldTick] = useState("");
+
   useEffect(() => {
     if (typeof window.ethereum !== "undefined") {
       setHasMetamask(true);
     }
   });
 
-  useEffect(()=>{
-if(token0!==""&&token1!=="")
-{
-  getPool()
-}
-  },[token0,token1])
+  useEffect(() => {
+    if (token0 !== "" && token1 !== "") {
+      getPool();
+    }
+  }, [token0, token1]);
+  useEffect(() => {
+    if (pool !== "") {
+      getPrice();
+    }
+  }, [pool]);
   async function getPool() {
     if (active) {
       const signer = provider.getSigner();
-      const factoryContract = new ethers.Contract(
-        factory,
-        factoryAbi,
-        signer
-      );
+      const factoryContract = new ethers.Contract(factory, factoryAbi, signer);
       try {
-      const pools=  await factoryContract.pools(token0,token1, 0);
-      setPool(pools)
+        const pools = await factoryContract.pools(token0, token1, 0);
+        setPool(pools);
       } catch (error) {
         console.log(error);
       }
@@ -77,7 +89,34 @@ if(token0!==""&&token1!=="")
       console.log("Please install MetaMask");
     }
   }
-  
+  async function getPrice() {
+    if (active) {
+      const signer = provider.getSigner();
+      const poolInst = new ethers.Contract(pool, poolAbi, signer);
+      const tridentMathInst = new ethers.Contract(
+        TridentMath,
+        tridentMathUIAbi,
+        signer
+      );
+      const twoX192 = BigNumber.from(2).pow(96);
+
+      try {
+        const poolCurrentprice = await poolInst.price();
+        console.log(poolCurrentprice.toString());
+        const currentprice = await tridentMathInst.priceFromSqrtprice(
+          twoX192.toString(),
+          poolCurrentprice.toString()
+        );
+        console.log(currentprice.toString());
+        setCurrentPrice(currentprice.toString());
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("Please install MetaMask");
+    }
+  }
+
   const {
     active,
     activate,
@@ -104,30 +143,57 @@ if(token0!==""&&token1!=="")
       const signer = provider.getSigner();
       const accountAddress = await signer.getAddress();
       const poolInst = new ethers.Contract(pool, poolAbi, signer);
-      const TickMathContract = new ethers.Contract(TickMath, tickMathAbi, signer);
-      const tridentMathInst= new ethers.Contract(TridentMath,tridentMathUIAbi, signer)
+      const TickMathContract = new ethers.Contract(
+        TickMath,
+        tickMathAbi,
+        signer
+      );
+      const tridentMathInst = new ethers.Contract(
+        TridentMath,
+        tridentMathUIAbi,
+        signer
+      );
 
       const tickSpacing = await poolInst.tickSpacing();
-      const price=await poolInst.price()
-      const tickAtPrice=await TickMathContract.getTickAtSqrtRatio(price);
+      const price = await poolInst.price();
+      const tickAtPrice = await TickMathContract.getTickAtSqrtRatio(price);
+      console.log(tickAtPrice, price.toString());
       const nearestValidTick = tickAtPrice - (tickAtPrice % tickSpacing);
       const nearestEvenValidTick =
-      (nearestValidTick / tickSpacing) % 2 == 0 ? nearestValidTick : nearestValidTick + tickSpacing;
-      
+        (nearestValidTick / tickSpacing) % 2 == 0
+          ? nearestValidTick
+          : nearestValidTick + tickSpacing;
+
       // assume increasing tick value by one step brings us to a valid tick
       // satisfy "lower even" & "upper odd" conditions
       let lower = nearestEvenValidTick - step;
       let upper = nearestEvenValidTick + step + tickSpacing;
-      const lowerSqrtRatio=await TickMathContract.getSqrtRatioAtTick(lower)
-      const upperSqrtRatio=await TickMathContract.getSqrtRatioAtTick(upper)
-      
-      
-      const twoX192=BigNumber.from(2).pow(96);
-      const lowerprice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),lowerSqrtRatio.toString());
-      const upperprice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),upperSqrtRatio.toString());
-      console.log(price.toString(),lowerSqrtRatio.toString(),upperSqrtRatio.toString())
+      const lowerSqrtRatio = await TickMathContract.getSqrtRatioAtTick(lower);
+      const upperSqrtRatio = await TickMathContract.getSqrtRatioAtTick(upper);
+      setLowerTick(lower);
+      setUpperTick(upper);
 
-      console.log(lowerprice.toString(),upperprice.toString())
+      const twoX192 = BigNumber.from(2).pow(96);
+      const lowerprice = await tridentMathInst.priceFromSqrtprice(
+        twoX192.toString(),
+        lowerSqrtRatio.toString()
+      );
+      const upperprice = await tridentMathInst.priceFromSqrtprice(
+        twoX192.toString(),
+        upperSqrtRatio.toString()
+      );
+      console.log(
+        price.toString(),
+        lowerSqrtRatio.toString(),
+        upperSqrtRatio.toString()
+      );
+
+      console.log(
+        lowerprice.toString(),
+        upperprice.toString(),
+        lower.toString(),
+        upper.toString()
+      );
     }
   }
 
@@ -135,9 +201,9 @@ if(token0!==""&&token1!=="")
     if (active) {
       // debugger
       const signer = provider.getSigner();
-      const accountAddress=await signer.getAddress()
-      console.log('signer',accountAddress)
-      const poolInst = new ethers.Contract(pool,poolAbi, signer);
+      const accountAddress = await signer.getAddress();
+      console.log("signer", accountAddress);
+      const poolInst = new ethers.Contract(pool, poolAbi, signer);
       // const{ _MAX_TICK_LIQUIDITY,
       //   _tickSpacing,
       //   _swapFee,
@@ -146,15 +212,15 @@ if(token0!==""&&token1!=="")
       //   _masterDeployer,
       //   _token0,
       //   _token1}=await poolInst.getImmutables()
-      const _token0=await poolInst.token0();
-      const _token1=await poolInst.token1();
-         const tokenAInst= new ethers.Contract(_token0,erc20TokenAbi, signer)
-        const tokenBInst= new ethers.Contract(_token1,erc20TokenAbi, signer)
-        const vaultInst= new ethers.Contract(Vault,vaultAbi,signer);
-        // debugger
+      const _token0 = await poolInst.token0();
+      const _token1 = await poolInst.token1();
+      const tokenAInst = new ethers.Contract(_token0, erc20TokenAbi, signer);
+      const tokenBInst = new ethers.Contract(_token1, erc20TokenAbi, signer);
+      const vaultInst = new ethers.Contract(Vault, vaultAbi, signer);
+      // debugger
       try {
-        await tokenAInst.approve(Vault,getBigNumber(token0Amount));
-        await tokenBInst.approve(Vault,getBigNumber(token1Amount));
+        await tokenAInst.approve(Vault, getBigNumber(token0Amount));
+        await tokenBInst.approve(Vault, getBigNumber(token1Amount));
         await vaultInst.setMasterContractApproval(
           accountAddress,
           Manager,
@@ -174,111 +240,154 @@ if(token0!==""&&token1!=="")
   async function getvalidPrice() {
     if (active) {
       const signer = provider.getSigner();
-      const poolInst = new ethers.Contract(pool,poolAbi, signer);
-      const _tickSpacing=await poolInst.tickSpacing()
-      const tickMathInst= new ethers.Contract(TickMath,tickMathAbi, signer)
-      const tridentMathInst= new ethers.Contract(TridentMath,tridentMathUIAbi, signer)
-      
-      const twoX192=BigNumber.from(2).pow(96);
+      const poolInst = new ethers.Contract(pool, poolAbi, signer);
+      const _tickSpacing = await poolInst.tickSpacing();
+      const tickMathInst = new ethers.Contract(TickMath, tickMathAbi, signer);
+      const tridentMathInst = new ethers.Contract(
+        TridentMath,
+        tridentMathUIAbi,
+        signer
+      );
+
+      const twoX192 = BigNumber.from(2).pow(96);
       //Fetching current Pool Price
-      const poolCurrentprice=await poolInst.price()
-      console.log("hello")
-      console.log("pool Price,",poolCurrentprice.toString())
-      const currentprice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),poolCurrentprice.toString());
-      console.log('current pool price',currentprice.toString())
-      
+      const poolCurrentprice = await poolInst.price();
+      const tickAtPrice = await tickMathInst.getTickAtSqrtRatio(
+        poolCurrentprice
+      );
+      console.log(tickAtPrice, poolCurrentprice.toString());
+
+      console.log("hello");
+      console.log("pool Price,", poolCurrentprice.toString());
+      const currentprice = await tridentMathInst.priceFromSqrtprice(
+        twoX192.toString(),
+        poolCurrentprice.toString()
+      );
+      console.log("current pool price", currentprice.toString());
+      debugger;
       //Lower Price calculation
-      
-      const desiredSqrtX96Price=await tridentMathInst.sqrtPriceFromPrice(twoX192.toString(),lowerPrice.toString())
-      console.log("desired lowerSqrtX96",desiredSqrtX96Price.toString())
-      
-      const desiredLowerTick=await tickMathInst.getTickAtSqrtRatio(desiredSqrtX96Price.toString())
-      console.log("Desired Lower Tick",desiredLowerTick)
-      
-      let lowerValidTick= await findLowerValidTick(desiredLowerTick,_tickSpacing);
-      console.log("Valid Even tick",lowerValidTick)
-      
-      
-      let lowerValidSqrtPrice=await tickMathInst.getSqrtRatioAtTick(lowerValidTick.toString());
-      console.log('lower price from tick',lowerValidSqrtPrice.toString())
-      
+      const desiredSqrtX96Price = await tridentMathInst.sqrtPriceFromPrice(
+        twoX192.toString(),
+        lowerPrice.toString()
+      );
 
-      const finallowerPrice=await tridentMathInst.priceFromSqrtprice(twoX192,lowerValidSqrtPrice.toString());
-      const actualLowerPriceInDecimals=finallowerPrice/(10**6);
-      console.log('lower price actual ',actualLowerPriceInDecimals.toString())
+      const desiredLowerTick = await tickMathInst.getTickAtSqrtRatio(
+        desiredSqrtX96Price.toString()
+      );
+      console.log("Desired Lower Tick", desiredLowerTick);
 
+      let lowerValidTick = await findLowerValidTick(
+        desiredLowerTick,
+        _tickSpacing
+      );
+      console.log("Valid Even tick", lowerValidTick);
 
+      let lowerValidSqrtPrice = await tickMathInst.getSqrtRatioAtTick(
+        lowerValidTick.toString()
+      );
+      console.log("lower price from tick", lowerValidSqrtPrice.toString());
 
-        // Upper Tick Calculation
+      const finallowerPrice = await tridentMathInst.priceFromSqrtprice(
+        twoX192,
+        lowerValidSqrtPrice.toString()
+      );
+      const actualLowerPriceInDecimals = finallowerPrice / 10 ** 6;
+      console.log("lower price actual ", actualLowerPriceInDecimals.toString());
 
-      const upperSqrtX96=await tridentMathInst.sqrtPriceFromPrice(twoX192.toString(),upperPrice.toString())
-      console.log("desired upperSqrtX96",upperSqrtX96.toString())
-      
-      const tickAtUpperPrice=await tickMathInst.getTickAtSqrtRatio( upperSqrtX96.toString())
-      console.log("Desired Upper Tick",tickAtUpperPrice.toString())
+      // Upper Tick Calculation
 
-      let UpperValidTick= await findUpperValidTick(tickAtUpperPrice,_tickSpacing);
-      console.log("Valid Upper tick",UpperValidTick)
+      const upperSqrtX96 = await tridentMathInst.sqrtPriceFromPrice(
+        twoX192.toString(),
+        upperPrice.toString()
+      );
+      console.log("desired upperSqrtX96", upperSqrtX96.toString());
 
-      let UpperSqrtX96Valid=await tickMathInst.getSqrtRatioAtTick(UpperValidTick.toString());
-      console.log('Upper price from tick',UpperSqrtX96Valid.toString())
+      const tickAtUpperPrice = await tickMathInst.getTickAtSqrtRatio(
+        upperSqrtX96.toString()
+      );
+      console.log("Desired Upper Tick", tickAtUpperPrice.toString());
 
-      const finalUpperPrice=await tridentMathInst.priceFromSqrtprice(twoX192.toString(),UpperSqrtX96Valid.toString());
-      const actualUpperPriceInDecimals=finalUpperPrice/(10**6);
-      console.log('Upper price actual ',actualUpperPriceInDecimals.toString())
+      let UpperValidTick = await findUpperValidTick(
+        tickAtUpperPrice,
+        _tickSpacing
+      );
+      console.log("Valid Upper tick", UpperValidTick);
+
+      let UpperSqrtX96Valid = await tickMathInst.getSqrtRatioAtTick(
+        UpperValidTick.toString()
+      );
+      console.log("Upper price from tick", UpperSqrtX96Valid.toString());
+
+      const finalUpperPrice = await tridentMathInst.priceFromSqrtprice(
+        twoX192.toString(),
+        UpperSqrtX96Valid.toString()
+      );
+      const actualUpperPriceInDecimals = finalUpperPrice / 10 ** 6;
+      console.log("Upper price actual ", actualUpperPriceInDecimals.toString());
 
       //finding upper and lower old ticks
-      
+
       //Updating states
-      setLowerTick(lowerValidTick)
-      setUpperTick(UpperValidTick)
-      setLowerPrice(actualLowerPriceInDecimals)
-      setUpperPrice(actualUpperPriceInDecimals)
-  
+      setLowerTick(lowerValidTick);
+      setUpperTick(UpperValidTick);
+      setLowerPrice(actualLowerPriceInDecimals);
+      setUpperPrice(actualUpperPriceInDecimals);
     } else {
       console.log("Please install MetaMask");
     }
   }
 
-  async function findOldTicks(){
+  async function findOldTicks() {
     const signer = provider.getSigner();
-    const poolInst = new ethers.Contract(pool,poolAbi, signer);
-    const poolhelperInst = new ethers.Contract(PoolHelper,poolHelperAbi, signer);
+    const poolInst = new ethers.Contract(pool, poolAbi, signer);
+    const poolhelperInst = new ethers.Contract(
+      PoolHelper,
+      poolHelperAbi,
+      signer
+    );
 
-    const tickCount=await poolInst.tickCount();
-    const validTicksData=await poolhelperInst.getTickState(pool,tickCount);
-    const validTicks=[];
-    validTicksData.map((tickData)=>{
+    const tickCount = await poolInst.tickCount();
+    const validTicksData = await poolhelperInst.getTickState(pool, tickCount);
+    const validTicks = [];
+    validTicksData.map((tickData) => {
       validTicks.push(tickData.index);
-    })
+    });
     //Including current ticks
-    validTicks.push(lowerTick,upperTick)
+    validTicks.push(lowerTick, upperTick);
     //Sorting in ascending Order
     validTicks.sort(function (a, b) {
       return a - b;
     });
-    console.log('valiticks',validTicks)
+    console.log("valiticks", validTicks);
     let lowerOld = oldTickFinder(validTicks, lowerTick);
     let upperOld = oldTickFinder(validTicks, upperTick);
-    console.log('low1',lowerOld)
-    console.log('low2',upperOld)
-    setUpperOldTick(upperOld)
-    setLowerOldTick(lowerOld)
+    console.log("low1", lowerOld);
+    console.log("low2", upperOld);
+    setUpperOldTick(upperOld);
+    setLowerOldTick(lowerOld);
   }
   async function addliquidity() {
     if (active) {
       const signer = provider.getSigner();
-      const poolManagerInst = new ethers.Contract(Manager,poolManagerAbi, signer);
-      const tokenXamount=getBigNumber(token0Amount.toString())
-      const tokenYamount=getBigNumber(token1Amount.toString())
-      console.log('pool',pool)
-      console.log('loweroldTick',lowerOldTick)
-      console.log('LowerTick',lowerTick)
-      console.log('UpperOldTick',upperOldTick)
-      console.log('UpperTick',upperTick)
-      console.log('tokenXamount',tokenXamount)
-      console.log('tokenYamount',tokenYamount)
-      console.log('tokenId',tokenId)
+      const poolManagerInst = new ethers.Contract(
+        Manager,
+        poolManagerAbi,
+        signer
+      );
+      const poolInst = new ethers.Contract(pool, poolAbi, signer);
+
+      const tick = await poolInst.nearestTick();
+      const tokenXamount = getBigNumber(token0Amount.toString());
+      const tokenYamount = getBigNumber(token1Amount.toString());
+      console.log("pool", pool);
+      console.log("nearestTick", tick);
+      console.log("loweroldTick", lowerOldTick);
+      console.log("LowerTick", lowerTick);
+      console.log("UpperOldTick", upperOldTick);
+      console.log("UpperTick", upperTick);
+      console.log("tokenXamount", tokenXamount);
+      console.log("tokenYamount", tokenYamount);
+      console.log("tokenId", tokenId);
       try {
         await poolManagerInst.mint(
           pool,
@@ -290,8 +399,8 @@ if(token0!==""&&token1!=="")
           tokenYamount,
           true,
           "0",
-          tokenId,
-        )
+          tokenId
+        );
       } catch (error) {
         console.log(error);
       }
@@ -304,91 +413,198 @@ if(token0!==""&&token1!=="")
     <div>
       {hasMetamask ? (
         active ? (
-          chainId===80001?
-          "Connected! ":<button className="btn btn-danger float-end" >Switch To Mumbai</button>
-        ) : ( 
-          <button className="btn btn-danger float-end" onClick={() => connect()}>Connect</button>
+          chainId === 80001 ? (
+            "Connected! "
+          ) : (
+            <button className="btn btn-danger float-end">
+              Switch To Mumbai
+            </button>
+          )
+        ) : (
+          <button
+            className="btn btn-danger float-end"
+            onClick={() => connect()}
+          >
+            Connect
+          </button>
         )
       ) : (
         "Please install metamask"
       )}
       <div className="container">
-      <h1>AddLiquidity</h1>
+        <h1>AddLiquidity</h1>
         <div className="card">
           <div className="card-body">
             <form>
               <div className="mb-3">
-                <label htmlFor="exampleInputEmail1" className="form-label">Token0</label>
-                <input  className="form-control"
-                onChange={event=>setToken0(event.target.value)}
-                type="text"
-                value={token0} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  Token0
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setToken0(event.target.value)}
+                  type="text"
+                  value={token0}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputEmail1" className="form-label">Token1</label>
-                <input  className="form-control"
-                onChange={event=>setToken1(event.target.value)}
-                type="text"
-                value={token1} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  Token1
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setToken1(event.target.value)}
+                  type="text"
+                  value={token1}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputEmail1" className="form-label">Pool</label>
-                <input  className="form-control"
-                onChange={event=>setPool(event.target.value)}
-                type="text"
-                value={pool} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  Pool
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setPool(event.target.value)}
+                  type="text"
+                  value={pool}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputEmail1" className="form-label">tokenId</label>
-                <input  className="form-control"
-                onChange={event=>setTokenId(event.target.value)}
-                type="text"
-                value={tokenId} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  tokenId
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setTokenId(event.target.value)}
+                  type="text"
+                  value={tokenId}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputEmail1" className="form-label">Upper price</label>
-                <input  className="form-control"
-                onChange={event=>setUpperPrice(event.target.value)}
-                type="text"
-                value={upperPrice} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  Current price
+                </label>
+                <input
+                  className="form-control"
+                  type="text"
+                  readOnly
+                  value={
+                    currentprice === ""
+                      ? 0
+                      : ethers.utils.formatUnits(currentprice, 6)
+                  }
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputPassword1" className="form-label">Lower Price</label>
-                <input  className="form-control"
-                onChange={event=>setLowerPrice(event.target.value)}
-                type="text"
-                value={lowerPrice} />
+                <label htmlFor="exampleInputEmail1" className="form-label">
+                  Upper price
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setUpperPrice(event.target.value)}
+                  type="text"
+                  value={upperPrice}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputPassword1" className="form-label">Token A amount</label>
-                <input  className="form-control"
-                onChange={event=>setToken0Amount(event.target.value)}
-                type="text"
-                value={token0Amount} />
+                <label htmlFor="exampleInputPassword1" className="form-label">
+                  Lower Price
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setLowerPrice(event.target.value)}
+                  type="text"
+                  value={lowerPrice}
+                />
               </div>
               <div className="mb-3">
-                <label htmlFor="exampleInputPassword1" className="form-label">Token B amount</label>
-                <input  className="form-control"
-                onChange={event=>setToken1Amount(event.target.value)}
-                type="text"
-                value={token1Amount} />
+                <label htmlFor="exampleInputPassword1" className="form-label">
+                  Token A amount
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setToken0Amount(event.target.value)}
+                  type="text"
+                  value={token0Amount}
+                />
               </div>
-              {active ? <button type="button" className="btn btn-success btn-space" onClick={()=>approveTokens()}>Approve</button> : ""}
-              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>addliquidity()}>Add Liquidity</button> : ""}
-              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>getvalidPrice()}>Find Valid price</button> : ""}
-              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>findOldTicks()}>Find Old Ticks</button> : ""}
-              {active ? <button type="button" className="btn btn-primary btn-space" onClick={()=>toGetParams()}>toGetParams</button> : ""}
+              <div className="mb-3">
+                <label htmlFor="exampleInputPassword1" className="form-label">
+                  Token B amount
+                </label>
+                <input
+                  className="form-control"
+                  onChange={(event) => setToken1Amount(event.target.value)}
+                  type="text"
+                  value={token1Amount}
+                />
+              </div>
+              {active ? (
+                <button
+                  type="button"
+                  className="btn btn-success btn-space"
+                  onClick={() => approveTokens()}
+                >
+                  Approve
+                </button>
+              ) : (
+                ""
+              )}
+              {active ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-space"
+                  onClick={() => addliquidity()}
+                >
+                  Add Liquidity
+                </button>
+              ) : (
+                ""
+              )}
+              {active ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-space"
+                  onClick={() => getvalidPrice()}
+                >
+                  Find Valid price
+                </button>
+              ) : (
+                ""
+              )}
+              {active ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-space"
+                  onClick={() => findOldTicks()}
+                >
+                  Find Old Ticks
+                </button>
+              ) : (
+                ""
+              )}
+              {active ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-space"
+                  onClick={() => toGetParams()}
+                >
+                  toGetParams
+                </button>
+              ) : (
+                ""
+              )}
             </form>
           </div>
         </div>
-      <h1>WorkFlow</h1>
+        <h1>WorkFlow</h1>
 
-      <h3>1.Click Connect</h3>
-      <h3>2.Enter values</h3>
-      <h3>3.Click Find valid Price</h3>
-      <h3>4.Click Find Old Tick</h3>
-      <h3>5.Click Approve</h3>
-      <h3>6.Click AddLiquidity</h3>
+        <h3>1.Click Connect</h3>
+        <h3>2.Enter values</h3>
+        <h3>3.Click Find valid Price</h3>
+        <h3>4.Click Find Old Tick</h3>
+        <h3>5.Click Approve</h3>
+        <h3>6.Click AddLiquidity</h3>
       </div>
     </div>
   );
