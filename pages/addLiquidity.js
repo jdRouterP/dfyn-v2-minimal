@@ -5,6 +5,8 @@ import { useWeb3React } from "@web3-react/core";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import { encodeSqrtRatioX96 } from "@uniswap/v3-sdk";
+import { Fraction } from "fractional";
 import { erc20TokenAbi } from "../constants/abis/contracts/mocks/ERC20Mock.sol/ERC20Mock";
 import {
   MasterDeployer,
@@ -257,7 +259,6 @@ export default function Addliquidity() {
       );
       console.log(tickAtPrice, poolCurrentprice.toString());
 
-      console.log("hello");
       console.log("pool Price,", poolCurrentprice.toString());
       const currentprice = await tridentMathInst.priceFromSqrtprice(
         twoX192.toString(),
@@ -266,15 +267,17 @@ export default function Addliquidity() {
       console.log("current pool price", currentprice.toString());
       debugger;
       //Lower Price calculation
-      const desiredSqrtX96Price = await tridentMathInst.sqrtPriceFromPrice(
-        twoX192.toString(),
-        lowerPrice.toString()
+      //convert price to fraction
+      const lowerPriceFraction = new Fraction(lowerPrice);
+      const desiredLowerSqrtX96Price = encodeSqrtRatioX96(
+        lowerPriceFraction.numerator,
+        lowerPriceFraction.denominator
       );
 
       const desiredLowerTick = await tickMathInst.getTickAtSqrtRatio(
-        desiredSqrtX96Price.toString()
+        desiredLowerSqrtX96Price.toString()
       );
-      console.log("Desired Lower Tick", desiredLowerTick);
+      console.log("Desired Lower Tick", desiredLowerSqrtX96Price);
 
       let lowerValidTick = await findLowerValidTick(
         desiredLowerTick,
@@ -295,15 +298,18 @@ export default function Addliquidity() {
       console.log("lower price actual ", actualLowerPriceInDecimals.toString());
 
       // Upper Tick Calculation
+       //convert price to fraction
+       const upperPriceFraction = new Fraction(upperPrice);
+       const desiredUpperSqrtX96Price = encodeSqrtRatioX96(
+        upperPriceFraction.numerator,
+        upperPriceFraction.denominator
+       );
 
-      const upperSqrtX96 = await tridentMathInst.sqrtPriceFromPrice(
-        twoX192.toString(),
-        upperPrice.toString()
-      );
-      console.log("desired upperSqrtX96", upperSqrtX96.toString());
+
+      console.log("desired upperSqrtX96", desiredUpperSqrtX96Price.toString());
 
       const tickAtUpperPrice = await tickMathInst.getTickAtSqrtRatio(
-        upperSqrtX96.toString()
+        desiredUpperSqrtX96Price.toString()
       );
       console.log("Desired Upper Tick", tickAtUpperPrice.toString());
 
