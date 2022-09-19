@@ -1,7 +1,28 @@
 module.exports = {
   tokenFaucetAbi: [
     {
-      inputs: [],
+      inputs: [
+        {
+          internalType: "string",
+          name: "_name",
+          type: "string",
+        },
+        {
+          internalType: "string",
+          name: "_symbol",
+          type: "string",
+        },
+        {
+          internalType: "uint8",
+          name: "__decimals",
+          type: "uint8",
+        },
+        {
+          internalType: "address",
+          name: "_mintTo",
+          type: "address",
+        },
+      ],
       stateMutability: "nonpayable",
       type: "constructor",
     },
